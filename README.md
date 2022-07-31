@@ -1,6 +1,6 @@
 Process national OSM dataset
 
-so for each OSM link we will estimate the number of lanes (approximately). I have some logic somewhere in python
+For each OSM link we will estimate the number of lanes (approximately). 
 
 Then for each OSM link we will create a buffer based on the number of lanes
 
