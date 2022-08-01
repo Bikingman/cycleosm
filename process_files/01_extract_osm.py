@@ -3,7 +3,7 @@
 import os 
 import geopandas as gpd
 from process_national_osm.python.pbf_extractor import PBFDownloader, RoadsHandler
-
+# Source of PBFs: https://download.geofabrik.de/
 
 output_path = r'C:\Users\dpatterson\OneDrive - Cambridge Systematics\Documents\code\process_national_osm\data'
 url = 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
@@ -27,9 +27,11 @@ PBFDownloader(url, output_path=os.path.join(output_path, 'pbf', 'washington_dc.p
 handler = RoadsHandler(fclass=road_fclasses)
 handler.apply_file(os.path.join(output_path, 'pbf', 'washington_dc.pbf'), locations=True )
 
+# convert the nodes and ways to geopandas dataframes 
 ways = gpd.GeoDataFrame(handler.ways).set_index('id').set_crs(4326, allow_override=True)
 nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
 
+# save the geopandas dataframes as shapefiles
 ways.to_file(os.path.join(output_path, 'shp', 'washington_dc_ways.shp'), driver='ESRI Shapefile')
 nodes.to_file(os.path.join(output_path, 'shp', 'washington_dc_nodes.shp'), driver='ESRI Shapefile')
 
