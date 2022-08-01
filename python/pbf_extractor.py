@@ -14,6 +14,8 @@ Source of PBFs: https://download.geofabrik.de/
 import osmium
 import shapely.wkb as wkblib
 import wget
+import time
+import os 
 wkbfab = osmium.geom.WKBFactory()
 
 class PBFHandler(osmium.SimpleHandler):
@@ -136,32 +138,26 @@ class PBFDownloader():
     """
     Python class intended to download OSM PBF files from the web. 
     Params: 
-        - pbf_urls, dict, list, or string of URLs to PBF files. If using a dictionary, specify the URLs in a 2 part dictionary, where the URLs are in the values. 
+        - pbf_dict, dict of URLs to PBF files. Specify the URLs in a 2 part dictionary, where the URLs are in the values and the filename is the key. 
     """ 
-    def __init__(self, pbf_urls, output_path):
+    def __init__(self, pbf_dict, output_path):
         super(PBFDownloader, self).__init__()
-        self.pbf_urls = pbf_urls
+        self.pbf_dict = pbf_dict
         self.output_path = output_path
-    
 
-    def _download_pbf(self, pbf_url):
+    def _download_pbf(self, pbf_url, filename):
         """
         This function downloads individual OSM PBFs from a given URL and saves them to a user-defined output path.
          """
-        wget.download(pbf_url, out=self.output_path)
+        wget.download(pbf_url, out=filename)
         
     # parse pbfs and download each one
-    def parser_pbfs(self):
+    def parse_pbfs(self):
         """
         This function parses URLs from the user and downloads the associated OSM PBF. 
         """
-        if type(self.pbf_urls) is dict:
-            for i in self.pbf_urls.values():
-                self._download_pbf(i)
-        if type(self.pbf_urls) is list:
-            for i in self.download_pbf:
-                self._download_pbf(i)
-        if type(self.pbf_urls) is str:
-            self._download_pbf(self.pbf_urls)
-
+        for filename, url in self.pbf_dict.items():
+            start_time = time. time()
+            self._download_pbf(url, os.path.join(self.output_path, filename + '.pbf'))
+            print("Time to download file {0}: {1} minutes.".format(url, ((time.time() - start_time)/60)))
 

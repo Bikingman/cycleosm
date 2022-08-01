@@ -43,4 +43,9 @@ with open(os.path.join(output_path, 'csv', 'osmids_h3.csv'), 'w', newline='') as
     for i in h3:
         dict_writer.writerows(i)
 
+# TODO
+# save as a parquet  file 
+# save the h4 index 
+# save h3 indexes as integer 
+
 # QC here: https://observablehq.com/@nrabinowitz/h3-index-inspector?collection=@nrabinowitz/h3
