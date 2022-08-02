@@ -1,6 +1,9 @@
 
 import math
 import geopandas as gpd
+import pandas as pd
+from shapely.geometry import Polygon
+
 # from sqlalchemy import create_engine
 
 class Utils():
@@ -66,6 +69,23 @@ class Utils():
                 cols_exists.append(i)
         return cols_exists
 
+    def _bbox_list(self, gpd_df):
+        return([i for i in gpd_df.total_bounds])
+
+    def _polygon_from_bbox_list(self, gpd_df):
+        bbox = self._bbox_list(gpd_df)
+        return Polygon([[bbox[1], bbox[0]],
+                        [bbox[1],bbox[2]],
+                        [bbox[3],bbox[2]],
+                        [bbox[3], bbox[0]]])
+
+    def _return_gpd_df_f_polygon(self, gpd_df, id):
+        df = pd.DataFrame({'id': id, 'geometry': self._polygon_from_bbox_list(gpd_df)}, index=[0])
+        return ( 
+            gpd.GeoDataFrame(df, 
+                crs = gpd_df.crs,
+                geometry = 'geometry')
+                )
 
     # TODO write utilities to connect to postgresql 
     # def make_connection(user, password, host, db):

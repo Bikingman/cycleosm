@@ -5,6 +5,9 @@ conda install -c conda-forge python-wget
 conda install h3-py
 conda install h3pandas
 pip install osmium
+pip install pyarrow
 conda activate osm_nat_data_proc 
+cd C:\Users\dpatterson\OneDrive - Cambridge Systematics\Documents\code\process_national_osm\process_files
+
 
 
