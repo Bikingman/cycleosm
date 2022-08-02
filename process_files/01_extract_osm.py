@@ -6,7 +6,8 @@ from process_national_osm.python.pbf_extractor import PBFHandler
 import time
 
 output_path = r'C:\Users\dpatterson\OneDrive - Cambridge Systematics\Documents\code\process_national_osm\data'
-areas =   ['washington_dc', 'georgia', 'northeast']
+files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
+# files = ['washington_dc']
 road_fclasses = [          
                 'motorway',
                 'motorway_link',
@@ -31,10 +32,11 @@ def process(filename, output_path, road_fclasses):
     nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
 
     # save the geopandas dataframes as shapefiles
-    ways.to_file(os.path.join(output_path, 'shp', filename + '_ways.shp'), driver='ESRI Shapefile')
-    nodes.to_file(os.path.join(output_path, 'shp', filename + '_nodes.shp'), driver='ESRI Shapefile')
+    ways.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_ways.shp'), driver='ESRI Shapefile')
+    nodes.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp'), driver='ESRI Shapefile')
 
     print("Time to process file {0}: {1} minutes.".format(filename + '.pbf', ((time.time() - start_time)/60)))
 
-for i in areas:
+for i in files:
     process(i, output_path, road_fclasses)
+        
