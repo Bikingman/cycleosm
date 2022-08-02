@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "national_osm_dataset",
+            "database": "national_osm_dataset",
+            "username": "gis",
+            "password": "gis"
+        }
+    ]
+}

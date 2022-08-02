@@ -1,0 +1,9 @@
+version: "0.1"
+
+services:
+  gs1:
+      build: .
+      image: bikingman/process_osm_national_dataset
+      container_name: process_osm_national_dataset
+      volumes:
+        - /home/process_osm_national_dataset:/app/data

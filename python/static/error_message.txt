@@ -1,0 +1,6 @@
+There is a problem with your script. Possible problems include: 
+	1) roads object is not a geopandas object, 
+	2) your roads object is missing the specified lanes attribute, 
+	3) the existing lanes attribute is missing,
+	4) your new lanes attribute is already present,
+	5) your lanes dictionary is not a dictionary.
