@@ -1,1 +1,1 @@
-Library for extracting and standardizing large datasets OSM datasets.
+Library for extracting and standardizing large OSM datasets.
