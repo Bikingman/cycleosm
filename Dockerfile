@@ -1,11 +1,21 @@
-FROM bikingman/process_osm_national_dataset
 
-RUN /opt/conda/bin/conda config --add channels conda-forge && /opt/conda/bin/conda update \
-    -y conda && /opt/conda/bin/conda install \
-    -y geopandas 
+
+FROM continuumio/miniconda3
+
+RUN apt-get update && apt-get install -y libopencv-dev  \
+RUN apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev
 
 WORKDIR /app
 
-COPY . .
+# Create the environment:
+COPY environment.yml .
+RUN conda env create -f environment.yml 
 
-CMD ["python", "test.py"]
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "roads", "/bin/bash", "-c"]
+
+ENV PYTHONPATH "${PYTHONPATH}:/src/python"
+
+# Demonstrate the environment is activated:
+RUN echo "Make sure geopandas is installed:"
+RUN python -c "import geopandas"

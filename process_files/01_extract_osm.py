@@ -2,12 +2,11 @@
 
 import os 
 import geopandas as gpd
-from process_national_osm.python.pbf_extractor import PBFHandler 
+from pbf_extractor import PBFHandler 
 import time
 
-output_path = r'C:\Users\dpatterson\OneDrive - Cambridge Systematics\Documents\code\process_national_osm\data'
-# files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
-# files = ['washington_dc']
+output_path = r'/src/data'
+
 files = ['so_cal']
 road_fclasses = [          
                 'motorway',
@@ -52,4 +51,4 @@ def process(filename, output_path, road_fclasses):
 
 for i in files:
     process(i, output_path, road_fclasses)
-        
+

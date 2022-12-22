@@ -6,11 +6,8 @@ import pandas as pd
 from process_national_osm.python.roads import Roads
 from process_national_osm.python.h3_process import HandleH3
 import time
+output_path = r'/src/data'
 
-import csv
-output_path = r'C:\code\locus_segment_estimates\process_national_osm\data'
-# files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
-# files =   ['washington_dc']
 files = ['new_york']
 
 r = Roads() 

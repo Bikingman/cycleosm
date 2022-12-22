@@ -1,6 +1,6 @@
 import csv
 import geopandas as gpd
-from process_national_osm.python.utils import Utils
+from utils import Utils
 import os 
 from numpy import where
 
