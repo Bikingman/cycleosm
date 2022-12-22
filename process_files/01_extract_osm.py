@@ -41,11 +41,11 @@ def process(filename, output_path, road_fclasses):
 
     # convert the nodes and ways to geopandas dataframes 
     ways = gpd.GeoDataFrame(handler.ways).set_index('id').set_crs(4326, allow_override=True)
-    #nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
+    nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
 
     # save the geopandas dataframes as shapefiles
     ways.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_ways.shp'), driver='ESRI Shapefile')
-    #nodes.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp'), driver='ESRI Shapefile')
+    nodes.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp'), driver='ESRI Shapefile')
 
     print("Time to process file {0}: {1} minutes.".format(filename + '.pbf', ((time.time() - start_time)/60)))
 

@@ -26,17 +26,15 @@ def process(filename, output_path):
                                         one_way_col='oneway', 
                                         fclass_col='fclass'
                                         )
-    print(roads)
+
     # infer the road width based on the number of lanes 
     roads = r.infer_width_from_lanes(roads, 
                                         lanes_col='lanes1', 
                                         fclass_col='fclass',
                                         new_width_col='wid_mtrs')
-    print(roads)
 
     # buffer linestring based on the road width 
     roads = r.buffer_roads(roads, width_col='wid_mtrs', convert_to_utm=True, capped_lines=True).to_crs(4326)
-    print(roads)
 
     # save output from previous execution 
     roads.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_buffered_ways.shp'), driver='ESRI Shapefile')
@@ -48,8 +46,8 @@ def process(filename, output_path):
     h3_indexes.to_csv(os.path.join(output_path, 'csv', 'h3_' + filename + '.csv'),  index = False)  
 
     # save h3 polygon 
-    h3_ploys_13 = h.get_hex_df(h3_indexes['h3_index_lv13'])
-    h3_ploys_4 = h.get_hex_df(h3_indexes['summary_hex_lv4'])
+    h3_ploys_13 = h.get_hex_gdf(h3_indexes['h3_index_lv13'])
+    h3_ploys_4 = h.get_hex_gdf(h3_indexes['summary_hex_lv4'])
 
     h3_ploys_13.to_file(os.path.join(output_path, 'gpkg', 'hexes', filename + '_h3_ploys_13.gpkg'), driver='GPKG', layer=filename)
     h3_ploys_4.to_file(os.path.join(output_path, 'gpkg', 'hexes', filename + '_h3_ploys_4.gpkg'), driver='GPKG', layer=filename)
