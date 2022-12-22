@@ -1,6 +1,6 @@
 import csv
 import geopandas as gpd
-from process_national_osm.python.utils import Utils
+from utils import Utils
 import os 
 from numpy import where
 
@@ -57,7 +57,10 @@ class Roads(Utils):
         # define lanes 
         if cur_lns_col is not None: 
             roads[new_lns_col] = where(~roads[cur_lns_col].isnull(), roads[cur_lns_col], where(roads[one_way_col]=='yes',  roads[fclass_col].map(self.lanes_count_dict)*1, roads[fclass_col].map(self.lanes_count_dict)*2))
-            roads[new_lns_col] = roads[new_lns_col].astype(int)
+            try:
+                roads[new_lns_col] = roads[new_lns_col].astype(int)
+            except:
+                roads[new_lns_col] = roads[fclass_col].map(self.lanes_count_dict) # some are characters strings
         else:
             roads[new_lns_col] = roads[fclass_col].map(self.lanes_count_dict)
 

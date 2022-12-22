@@ -123,13 +123,17 @@ Osmium node function - with apply_file, creates a nodes object on the instantiat
             # create way 
             self.ways.append({'id': w.id, 
                               'fclass': tags.get('highway'), 
+                              #'fhwa_hfcs': self._check('HFCS', tags),
                               'name': self._check('name', tags),
                               'maxspeed': self._check('maxspeed', tags), 
                               'lanes': self._check('lanes', tags),
                               'surface': self._check('surface', tags),
                               'oneway': self._check('oneway', tags),
-                              'bike_status': self._existing_bikeway(w),
-                              'traf_signal': self._has_signalized_int(w,self.traffic_signal_ids),
+                              #'bicycle': self._check('bicycle', tags),
+                              #'bike_stts': self._existing_bikeway(w),
+                              #'tgr_county': self._check('tiger:county', tags),
+                              #'tgr_cfcc': self._check('tiger:cfcc', tags),
+                              'trf_signal': self._has_signalized_int(w,self.traffic_signal_ids),
                               'node_ids': ', '.join(str(e) for e in self._get_ways_node_ids(w)),
                               'geometry': self._create_geometry('linestring', w)
                                     })

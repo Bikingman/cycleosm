@@ -1,0 +1,13 @@
+name: roads
+channels:
+  - conda-forge
+dependencies:
+  - pandas 
+  - numpy 
+  - geopandas 
+  - openpyxl
+  - h3
+  - wget
+  - time
+  - osmium
+  - shapely

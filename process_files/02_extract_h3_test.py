@@ -6,9 +6,13 @@ import pandas as pd
 from process_national_osm.python.roads import Roads
 from process_national_osm.python.h3_process import HandleH3
 import time
-output_path = r'/src/data'
 
+import csv
+output_path = r'C:\code\locus_segment_estimates\process_national_osm\data'
+# files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
+# files =   ['us_northeast']
 files = ['new_york']
+# files =   ['washington_dc']
 
 r = Roads() 
 h = HandleH3()
@@ -26,17 +30,15 @@ def process(filename, output_path):
                                         one_way_col='oneway', 
                                         fclass_col='fclass'
                                         )
-    print(roads)
+
     # infer the road width based on the number of lanes 
     roads = r.infer_width_from_lanes(roads, 
                                         lanes_col='lanes1', 
                                         fclass_col='fclass',
                                         new_width_col='wid_mtrs')
-    print(roads)
 
     # buffer linestring based on the road width 
     roads = r.buffer_roads(roads, width_col='wid_mtrs', convert_to_utm=True, capped_lines=True).to_crs(4326)
-    print(roads)
 
     # save output from previous execution 
     roads.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_buffered_ways.shp'), driver='ESRI Shapefile')

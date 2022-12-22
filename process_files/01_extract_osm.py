@@ -2,12 +2,12 @@
 
 import os 
 import geopandas as gpd
-from process_national_osm.python.pbf_extractor import PBFHandler 
+from pbf_extractor import PBFHandler 
 import time
 
-output_path = r'C:\Users\dpatterson\OneDrive - Cambridge Systematics\Documents\code\process_national_osm\data'
-files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
-# files = ['washington_dc']
+output_path = r'/src/data'
+
+files = ['so_cal']
 road_fclasses = [          
                 'motorway',
                 'motorway_link',
@@ -18,7 +18,19 @@ road_fclasses = [
                 'trunk',
                 'trunk_link',
                 'tertiary',
-                'tertiary_link'
+                'tertiary_link',
+                'residential',
+                'living_street',
+                'bus_guideway',
+                'busway',
+                'road',
+                'cycleway',
+                'service',
+                'path',
+                'steps',
+                'pedestrian',
+                'footway',
+                'sidewalk'
             ]
 
 # extract roads and nodes 
@@ -29,14 +41,14 @@ def process(filename, output_path, road_fclasses):
 
     # convert the nodes and ways to geopandas dataframes 
     ways = gpd.GeoDataFrame(handler.ways).set_index('id').set_crs(4326, allow_override=True)
-    nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
+    #nodes = gpd.GeoDataFrame(handler.nodes).set_index('id')
 
     # save the geopandas dataframes as shapefiles
     ways.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_ways.shp'), driver='ESRI Shapefile')
-    nodes.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp'), driver='ESRI Shapefile')
+    #nodes.to_file(os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp'), driver='ESRI Shapefile')
 
     print("Time to process file {0}: {1} minutes.".format(filename + '.pbf', ((time.time() - start_time)/60)))
 
 for i in files:
     process(i, output_path, road_fclasses)
-        
+

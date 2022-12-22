@@ -1,7 +1,7 @@
 import h3
 import pandas as pd 
 import geopandas as gpd
-from process_national_osm.python.utils import Utils
+from utils import Utils
 from shapely.geometry import Polygon
 
 class HandleH3(Utils):
