@@ -2,8 +2,8 @@
 
 FROM continuumio/miniconda3
 
-RUN apt-get update && apt-get install -y libopencv-dev  
-RUN apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev
+RUN apt-get update && apt-get install libopencv-dev -y
+RUN apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev -y
 
 WORKDIR /app
 
@@ -15,6 +15,9 @@ RUN conda env create -f environment.yml
 SHELL ["conda", "run", "-n", "roads", "/bin/bash", "-c"]
 
 ENV PYTHONPATH "${PYTHONPATH}:/src/python"
+
+RUN  pip install h3
+RUN  pip install osmium
 
 # Demonstrate the environment is activated:
 RUN echo "Make sure geopandas is installed:"
