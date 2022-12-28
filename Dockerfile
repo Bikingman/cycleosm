@@ -2,7 +2,7 @@
 
 FROM continuumio/miniconda3
 
-RUN apt-get update && apt-get install -y libopencv-dev  \
+RUN apt-get update && apt-get install -y libopencv-dev  
 RUN apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev
 
 WORKDIR /app
