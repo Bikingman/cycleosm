@@ -8,7 +8,7 @@ from process_national_osm.python.h3_process import HandleH3
 import time
 output_path = r'/src/data'
 
-files = ['new_york']
+files = ['washington_dc']
 
 r = Roads() 
 h = HandleH3()

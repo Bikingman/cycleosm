@@ -16,6 +16,7 @@ import shapely.wkb as wkblib
 import wget
 import time
 import os 
+
 wkbfab = osmium.geom.WKBFactory()
 
 class PBFHandler(osmium.SimpleHandler):
@@ -26,12 +27,47 @@ class PBFHandler(osmium.SimpleHandler):
     Params: 
         - fclass, list type - list of functional classification names 
     """
+
     def __init__(self, fclass=[]):
         super(PBFHandler, self).__init__()
         self.ways = []
         self.traffic_signal_ids = []
         self.nodes = {'id': [], 'traffic_signals': [], 'geometry': []}
-        self.fclass = fclass
+        if len(fclass) > 0:
+            self.fclass = fclass
+        else:
+            self.fclass  = [          
+                'motorway', 'motorway_link',
+                'primary', 'primary_link',
+                'secondary', 'secondary_link',
+                'trunk', 'trunk_link',
+                'tertiary', 'tertiary_link',
+                'residential', 'living_street',
+                'bus_guideway', 'busway',
+                'road', 'cycleway',
+                'service', 'path',
+                'steps', 'pedestrian',
+                'footway', 'sidewalk',
+                'track', 'unclassified'
+            ]
+ 
+        self.cycleways = {'crossing': 'Crossing',
+                          'shared_lane': 'Shared Road', 
+                          'opposite_share_busway': 'Shared Road',
+                          'share_busway': 'Shared Road',
+                          'lane': 'Bike Lane', 
+                          'opposite_lane': 'Bike Lane', 
+                          'opposite': 'Bike Lane', 
+                          'buffer': 'Buffered Bike Lane', 
+                          'buffered_lane': 'Buffered Bike Lane',  # Catch possible tagging mistakes
+                          'track': 'Protected Bike Lane',
+                          'opposite_track': 'Protected Bike Lane',
+                          'separate': 'Shared Use Path',
+                          'sidepath': 'Shared Use Path',
+                          'cycleway': 'Cycleway',
+                          'C ycleway': 'Cycleway'
+        }
+
  
     def _check(self, name, tags):
         """
@@ -77,19 +113,102 @@ class PBFHandler(osmium.SimpleHandler):
         node_ids = []
         for node in feature.nodes:
             node_ids.append(node.ref)
-        return(node_ids)
+        return node_ids
 
     # confirm if way has an existing bicycle facility 
-    def _existing_bikeway(self, feature):
+    def _existing_bikeway(self, tags):
         """
         Determines if a given way has an existing bicycle facility
         params 
             - feature, feature object - osmium feature object from ways functions 
         """ 
-        if feature.tags.get('highway') == 'cycleway' or feature.tags.get('bicycle') == 'Yes': 
-            return 'existing'
-        else:
-            return 'not present'
+
+        if tags.get('highway') == 'cycleway': 
+            return 'Existing'
+        elif tags.get('cycleway') in list(self.cycleways.keys()):
+            if tags.get('cycleway') not in ('no', 'none'):
+                return 'Existing'
+        if 'cycleway:right' in tags or 'cycleway:left' in tags:
+            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
+                if tags['cycleway:right'] not in ('no', 'none'):
+                    return 'Existing'
+            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] not in ('no', 'none'):
+                    return 'Existing'
+            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                    return 'Existing'
+                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                    return 'Existing'
+                else: 
+                    return 'Existing'
+
+    def _bike_infra(self, tags, min_max='max'):
+        """
+        This function is used to check for an existing value within a feature's attribution tag list
+        """
+
+        if 'cycleway:right' in tags or 'cycleway:left' in tags:
+            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
+                if tags['cycleway:right'] not in ('no', 'none'):
+                    if min_max == 'max':
+                        return self.cycleways[tags['cycleway:right']]
+            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] not in ('no', 'none'):
+                    if min_max == 'max':
+                        return self.cycleways[tags['cycleway:left']]
+            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                    return 'None'
+                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                    if min_max == 'max':
+                        return self.cycleways[tags['cycleway:left']]
+                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                    if min_max == 'max':
+                        return self.cycleways[tags['cycleway:right']]
+                else: 
+                    v1 = list(self.cycleways.keys()).index(tags['cycleway:right'])
+                    v2 = list(self.cycleways.keys()).index(tags['cycleway:left'])
+                    if min_max == 'min':
+                        return list(self.cycleways.values())[min([v2, v1])]
+                    else:
+                        return list(self.cycleways.values())[max([v2, v1])]
+
+        elif 'cycleway' in tags:
+            if tags['cycleway'] not in ('no', 'none'):
+                return list(self.cycleways.values())[list(self.cycleways.keys()).index(tags['cycleway'])]
+
+    def _osmbike_infra(self, tags):
+        """
+        This function is used to check for an existing value within a feature's attribution tag list
+        """
+        if 'cycleway:right' in tags or 'cycleway:left' in tags:
+            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
+                if tags['cycleway:right'] not in ('no', 'none'):
+                    return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
+            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] not in ('no', 'none'):
+                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
+            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
+                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
+                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                    return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
+                else: 
+                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: ' + tags['cycleway:right'].capitalize()
+        elif 'cycleway' in tags:
+            if tags['cycleway'] not in ('no', 'none'):
+                return tags['cycleway'].capitalize()
+        elif tags.get('highway') == 'cycleway':
+            return 'Cycleway'
+
+    def _get_integers(self, value):
+        if value is not None:
+            return ''.join(str(x) for x in [int(x) for x in value.split() if x.isdigit()])
+ 
+    def _capitalize(self, value):
+        if value is not None:
+            return value.capitalize()
 
     # handle nodes 
     def node(self, n):
@@ -118,21 +237,21 @@ Osmium node function - with apply_file, creates a nodes object on the instantiat
         tags = w.tags
         
         # process ways 
-        if 'highway' in tags and tags.get('highway') in self.fclass:
+        if ('highway' in tags and tags.get('highway') in self.fclass) or ('cycleway' in tags and tags.get('highway') != 'proposed'):
 
             # create way 
             self.ways.append({'id': w.id, 
                               'fclass': tags.get('highway'), 
-                              #'fhwa_hfcs': self._check('HFCS', tags),
                               'name': self._check('name', tags),
-                              'maxspeed': self._check('maxspeed', tags), 
-                              'lanes': self._check('lanes', tags),
+                              'maxspeed': self._get_integers(self._check('maxspeed', tags)), 
+                              'lanes': self._get_integers(self._check('lanes', tags)),
                               'surface': self._check('surface', tags),
-                              'oneway': self._check('oneway', tags),
-                              #'bicycle': self._check('bicycle', tags),
-                              #'bike_stts': self._existing_bikeway(w),
-                              #'tgr_county': self._check('tiger:county', tags),
-                              #'tgr_cfcc': self._check('tiger:cfcc', tags),
+                              'oneway': self._capitalize(self._check('oneway', tags)),
+                              'bike_stats': self._existing_bikeway(tags),
+                              'osmbk_infra': self._osmbike_infra(tags),
+                              # 'desgnatd_bk': self._dsgnatd_bk(tags), # finding this isn't useful. Pulls a lot of sidewalks where bicycles are allowed.
+                              'min_bk_inf': self._bike_infra(tags, 'min'),
+                              'max_bk_inf': self._bike_infra(tags, 'max'),
                               'trf_signal': self._has_signalized_int(w,self.traffic_signal_ids),
                               'node_ids': ', '.join(str(e) for e in self._get_ways_node_ids(w)),
                               'geometry': self._create_geometry('linestring', w)

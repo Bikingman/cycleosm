@@ -8,11 +8,8 @@ from process_national_osm.python.h3_process import HandleH3
 import time
 
 import csv
-output_path = r'C:\code\locus_segment_estimates\process_national_osm\data'
-# files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
-# files =   ['us_northeast']
-files = ['new_york']
-# files =   ['washington_dc']
+output_path = r'/src/data'
+files =   ['washington_dc']
 
 r = Roads() 
 h = HandleH3()
