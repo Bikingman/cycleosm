@@ -88,7 +88,8 @@ class PBFHandler(osmium.SimpleHandler):
                           'protected lane': 'Protected Bike Lane',
                           'closed_lane': 'None',
                           'asl': 'Advanced Stop Line',
-                          'proposed': 'Proposed'
+                          'proposed': 'Proposed',
+                          'use_sidepath': 'None'
                           
         }
 
@@ -150,7 +151,7 @@ class PBFHandler(osmium.SimpleHandler):
         if tags.get('highway') == 'cycleway': 
             return 'Existing'
         elif tags.get('cycleway') in list(self.cycleways.keys()):
-            if tags.get('cycleway') not in self.self.not_bike_facs:
+            if tags.get('cycleway') not in self.not_bike_facs:
                 return 'Existing'
         if 'cycleway:both' in tags:
             if tags['cycleway:both'] not in self.not_bike_facs:
