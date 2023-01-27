@@ -33,6 +33,7 @@ class PBFHandler(osmium.SimpleHandler):
         self.ways = []
         self.traffic_signal_ids = []
         self.nodes = {'id': [], 'traffic_signals': [], 'geometry': []}
+        self.not_bike_facs = ['no', 'none', 'No', 'None', 'sidewalk', 'Sidewalk']
         if len(fclass) > 0:
             self.fclass = fclass
         else:
@@ -56,6 +57,7 @@ class PBFHandler(osmium.SimpleHandler):
                           'opposite_share_busway': 'Shared Road',
                           'share_busway': 'Shared Road',
                           'lane': 'Bike Lane', 
+                          'lanes': 'Bike Lane',
                           'opposite_lane': 'Bike Lane', 
                           'opposite': 'Bike Lane', 
                           'buffer': 'Buffered Bike Lane', 
@@ -65,7 +67,29 @@ class PBFHandler(osmium.SimpleHandler):
                           'separate': 'Shared Use Path',
                           'sidepath': 'Shared Use Path',
                           'cycleway': 'Cycleway',
-                          'C ycleway': 'Cycleway'
+                          'C ycleway': 'Cycleway',
+                          'yes': 'Bike Lane',
+                          'shared_parking_lane': 'Shared Lane',
+                          'shoulder': 'Shoulder',
+                          'shared': 'Shared Lane',
+                          'path': 'Shared Use Path',
+                          '1': 'Bike Lane',
+                          'right': 'Bike Lane',
+                          'on_street': 'Shared Lane',
+                          'unmarked_lane': 'Shoulder',
+                          'designated': 'Bike Lane',
+                          'both': 'Bike Lane',
+                          'lane=exlusive': 'None',
+                          'noneno': 'None',
+                          'traffic_island': 'None',
+                          'link': 'None',
+                          '\\': 'None',
+                          'lane=exclusive': 'Protected Bike Lane',
+                          'protected lane': 'Protected Bike Lane',
+                          'closed_lane': 'None',
+                          'asl': 'Advanced Stop Line',
+                          'proposed': 'Proposed'
+                          
         }
 
  
@@ -126,19 +150,22 @@ class PBFHandler(osmium.SimpleHandler):
         if tags.get('highway') == 'cycleway': 
             return 'Existing'
         elif tags.get('cycleway') in list(self.cycleways.keys()):
-            if tags.get('cycleway') not in ('no', 'none'):
+            if tags.get('cycleway') not in self.self.not_bike_facs:
                 return 'Existing'
-        if 'cycleway:right' in tags or 'cycleway:left' in tags:
+        if 'cycleway:both' in tags:
+            if tags['cycleway:both'] not in self.not_bike_facs:
+                return 'Existing'
+        elif 'cycleway:right' in tags or 'cycleway:left' in tags:
             if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in ('no', 'none'):
+                if tags['cycleway:right'] not in self.not_bike_facs:
                     return 'Existing'
             elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs:
                     return 'Existing'
             elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
                     return 'Existing'
-                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
                     return 'Existing'
                 else: 
                     return 'Existing'
@@ -147,23 +174,22 @@ class PBFHandler(osmium.SimpleHandler):
         """
         This function is used to check for an existing value within a feature's attribution tag list
         """
-
         if 'cycleway:right' in tags or 'cycleway:left' in tags:
             if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in ('no', 'none'):
+                if tags['cycleway:right'] not in self.not_bike_facs:
                     if min_max == 'max':
-                        return self.cycleways[tags['cycleway:right']]
+                        return str(self.cycleways[tags['cycleway:right']])
             elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs:
                     if min_max == 'max':
                         return self.cycleways[tags['cycleway:left']]
             elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                if tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
                     return 'None'
-                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
                     if min_max == 'max':
                         return self.cycleways[tags['cycleway:left']]
-                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
                     if min_max == 'max':
                         return self.cycleways[tags['cycleway:right']]
                 else: 
@@ -174,8 +200,12 @@ class PBFHandler(osmium.SimpleHandler):
                     else:
                         return list(self.cycleways.values())[max([v2, v1])]
 
+        if 'cycleway:both' in tags:
+            if tags['cycleway:both'] not in self.not_bike_facs:
+                return self.cycleways[tags['cycleway:both']]
+
         elif 'cycleway' in tags:
-            if tags['cycleway'] not in ('no', 'none'):
+            if tags['cycleway'] not in self.not_bike_facs:
                 return list(self.cycleways.values())[list(self.cycleways.keys()).index(tags['cycleway'])]
 
     def _osmbike_infra(self, tags):
@@ -184,21 +214,27 @@ class PBFHandler(osmium.SimpleHandler):
         """
         if 'cycleway:right' in tags or 'cycleway:left' in tags:
             if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in ('no', 'none'):
+                if tags['cycleway:right'] not in self.not_bike_facs:
                     return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
             elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs:
                     return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
             elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in ('no', 'none') and tags['cycleway:right'] in ('no', 'none'):
+                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
                     return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
-                elif tags['cycleway:left'] in ('no', 'none') and tags['cycleway:right'] not in ('no', 'none'):
+                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
                     return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
                 else: 
                     return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: ' + tags['cycleway:right'].capitalize()
+        
         elif 'cycleway' in tags:
-            if tags['cycleway'] not in ('no', 'none'):
+            if tags['cycleway'] not in self.not_bike_facs:
                 return tags['cycleway'].capitalize()
+        
+        elif 'cycleway:both' in tags:
+                if tags['cycleway:both'] not in self.not_bike_facs:
+                    return tags['cycleway:both'].capitalize()
+        
         elif tags.get('highway') == 'cycleway':
             return 'Cycleway'
 
