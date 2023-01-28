@@ -56,7 +56,6 @@ class PBFHandler(osmium.SimpleHandler):
             'cycleway', 
             'cycleway:right', 
             'cycleway:left', 
-       #     'oneway:bicycle', 
             'cycleway:both', 
             'cycleway:buffer', 
             'cycleway:right:buffer', 
@@ -231,6 +230,7 @@ class PBFHandler(osmium.SimpleHandler):
             return 'Shared Use Path'
 
     def _sided_bike_infra(self, tags, side): 
+
         if 'cycleway:{0}'.format(side) in tags:
             if 'cycleway:{0}:buffer'.format(side) in tags:
                 if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
@@ -262,6 +262,11 @@ class PBFHandler(osmium.SimpleHandler):
                 index = list(self.cycleways.keys()).index(tags['cycleway'])
                 return list(self.cycleways.values())[index]
 
+        elif 'oneway:bicycle' in tags:
+            if tags['oneway:bicycle'] not in self.not_bike_facs:
+                index = list(self.cycleways.keys()).index(tags['oneway:bicycle'])
+                return list(self.cycleways.values())[index]
+
         elif tags['highway'] == 'cycleway':
             return 'Shared Use Path'
 
@@ -289,8 +294,14 @@ class PBFHandler(osmium.SimpleHandler):
             if tags['cycleway'] not in self.not_bike_facs:
                 return tags['cycleway'].capitalize()
 
+        elif 'oneway:bicycle' in tags:
+            if tags['oneway:bicycle'] not in self.not_bike_facs:
+                index = list(self.cycleways.keys()).index(tags['oneway:bicycle'])
+                return list(self.cycleways.values())[index]
+
         elif tags['highway'] == 'cycleway':
             return 'cycleway'
+
 
     def _sided_bike_width(self, tags, side):
 
