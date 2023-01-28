@@ -56,7 +56,7 @@ class PBFHandler(osmium.SimpleHandler):
             'cycleway', 
             'cycleway:right', 
             'cycleway:left', 
-            'oneway:bicycle', 
+       #     'oneway:bicycle', 
             'cycleway:both', 
             'cycleway:buffer', 
             'cycleway:right:buffer', 
@@ -80,7 +80,7 @@ class PBFHandler(osmium.SimpleHandler):
                               'unmarked_lane'
                               ]
         # important this list needs to be ordered from least protection to greatest protection 
-        self.cycleways = {'proposed': 'Proposed',
+        self.cycleways = {'proposed': 'Proposed', 
                           'crossing': 'Crossing',
                           'asl': 'Advanced Stop Line',
                           'shoulder': 'Shoulder',
@@ -147,7 +147,8 @@ class PBFHandler(osmium.SimpleHandler):
         for node in feature.nodes:
             if node.ref in traffic_sig_ids:
                 return 'Yes'
-        return 'No'
+            else:
+                return 'No'
 
     # get a list of nodes from way 
     def _get_ways_node_ids(self, feature):
@@ -161,30 +162,49 @@ class PBFHandler(osmium.SimpleHandler):
             node_ids.append(node.ref)
         return node_ids
 
-    # get an indexed list of bike infra for use with self.cycleways
-    def _get_list_of_bike_infra(self, tags, minmax):
-        themin = -1
-        themax = len(self.bike_tags) + 1
+    def _get_buffered_bike_lane(self, tags, sides):
+        for side in sides:
+            if 'cycleway:{0}:buffer'.format(side) in tags:
+                if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
+                    buf_index = list(self.cycleways.keys()).index(tags['cycleway:{0}:buffer'.format(side)])
+                    if list(self.cycleways.values())[buf_index] == 'Bike Lane':
+                        return 'Buffered Bike Lane'
 
-        for cur_tag in self.bike_tags:
-            if cur_tag in tags:
-                if tags[cur_tag] not in self.not_bike_facs:
-                    if minmax == 'max':
-                        if list(self.cycleways.keys()).index(tags[cur_tag]) > themin:
-                            themin = list(self.cycleways.keys()).index(tags[cur_tag])
-                    else:
-                        if list(self.cycleways.keys()).index(tags[cur_tag]) < themax:
-                            themax = list(self.cycleways.keys()).index(tags[cur_tag])
-        print(themin)
-        print(themax)
-        if minmax == 'max':
-            if themin != -1:
-                return list(self.cycleways.values())[themin]
-        elif minmax == 'min':
-            if themax != len(self.bike_tags) + 1:
-                return list(self.cycleways.values())[themax]
-        else:
+
+    # get an indexed list of bike infra for use with self.cycleways
+    def _get_min_bike_infra(self, tags):
+        if self._get_oneway(tags) == 'Yes':
+            return self._get_max_bike_infra(tags)
+        elif self._sided_bike_infra(tags, 'left') == None:
             return None
+        elif self._sided_bike_infra(tags, 'right') == None:
+            return None
+        else:
+            left = list(self.cycleways.values()).index(self._sided_bike_infra(tags, 'left'))
+            right = list(self.cycleways.values()).index(self._sided_bike_infra(tags, 'right'))
+            if left <= right:
+                return self._sided_bike_infra(tags, 'left')
+            else:
+                return self._sided_bike_infra(tags, 'right')
+
+    def _get_max_bike_infra(self, tags):
+        left = None
+        right = None
+
+        if self._sided_bike_infra(tags, 'left') is not None:
+            left = list(self.cycleways.values()).index(self._sided_bike_infra(tags, 'left'))
+        if self._sided_bike_infra(tags, 'right') is not None:
+            right = list(self.cycleways.values()).index(self._sided_bike_infra(tags, 'right'))
+
+        if left is not None and right is not None:
+            if left > right:
+                return self._sided_bike_infra(tags, 'left')
+            else:
+                return self._sided_bike_infra(tags, 'right')
+        elif left is None and right is not None:
+            return self._sided_bike_infra(tags, 'right')
+        elif left is not None and right is None:
+            return self._sided_bike_infra(tags, 'left')
 
     def _get_oneway(self, tags):
         #todo if null then no
@@ -201,46 +221,39 @@ class PBFHandler(osmium.SimpleHandler):
         This function is used to check for an existing value within a feature's attribution tag list
         """
 
-        if 'oneway' in tags:
-            if 'yes' in tags['oneway']:
-                return self._get_list_of_bike_infra(tags, 'max')
-
-        elif min_max == 'min':
-            return self._get_list_of_bike_infra(tags, 'min')
+        if min_max == 'min':
+            return self._get_min_bike_infra(tags)
             
         elif min_max == 'max':
-            return self._get_list_of_bike_infra(tags, 'max')
+            return self._get_max_bike_infra(tags)
         
         elif tags['highway'] == 'cycleway':
             return 'Shared Use Path'
 
-
-    def _sided_bike_infra(self, tags, side):
-        if 'cycleway:{0}:buffer'.format(side) in tags:
-            if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
-                index = list(self.cycleways.keys()).index(tags['cycleway:{0}:buffer'.format(side)])
-                bl = list(self.cycleways.values())[index]
-                if bl == 'Bike Lane':
-                    return 'Buffered Bike Lane'
-                else:
-                    return bl
-        
-        elif 'cycleway:{0}'.format(side) in tags:
-            if tags['cycleway:{0}'.format(side)] not in self.not_bike_facs:
+    def _sided_bike_infra(self, tags, side): 
+        if 'cycleway:{0}'.format(side) in tags:
+            if 'cycleway:{0}:buffer'.format(side) in tags:
+                if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
+                    index = list(self.cycleways.keys()).index(tags['cycleway:{0}:buffer'.format(side)])
+                    bl = list(self.cycleways.values())[index]
+                    if bl == 'Bike Lane':
+                        return 'Buffered Bike Lane'
+                    else:
+                        return bl
+            elif tags['cycleway:{0}'.format(side)] not in self.not_bike_facs:
                 index = list(self.cycleways.keys()).index(tags['cycleway:{0}'.format(side)])
                 return list(self.cycleways.values())[index]
 
-        elif 'cycleway:both:buffer' in tags:
-            if tags['cycleway:both:buffer'] not in self.not_bike_facs:
-                index = list(self.cycleways.keys()).index(tags['cycleway:both:buffer'])
-                bl = list(self.cycleways.values())[index]
-                if bl == 'Bike Lane':
-                    return 'Buffered Bike Lane'
-                else:
-                    return bl
-
         elif 'cycleway:both' in tags:
-            if tags['cycleway:both'] not in self.not_bike_facs:
+            if 'cycleway:both:buffer'.format(side) in tags:
+                if tags['cycleway:both:buffer'] not in self.not_bike_facs:
+                    index = list(self.cycleways.keys()).index(tags['cycleway:both:buffer'])
+                    bl = list(self.cycleways.values())[index]
+                    if bl == 'Bike Lane':
+                        return 'Buffered Bike Lane'
+                    else:
+                        return bl
+            elif tags['cycleway:both'] not in self.not_bike_facs:
                 index = list(self.cycleways.keys()).index(tags['cycleway:both'])
                 return list(self.cycleways.values())[index]
 
@@ -278,7 +291,7 @@ class PBFHandler(osmium.SimpleHandler):
 
         elif tags['highway'] == 'cycleway':
             return 'cycleway'
-            
+
     def _sided_bike_width(self, tags, side):
 
         if 'cycleway:{0}:width'.format(side) in tags:
