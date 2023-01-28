@@ -33,7 +33,7 @@ class PBFHandler(osmium.SimpleHandler):
         self.ways = []
         self.traffic_signal_ids = []
         self.nodes = {'id': [], 'traffic_signals': [], 'geometry': []}
-        self.not_bike_facs = ['no', 'none', 'No', 'None', 'sidewalk', 'Sidewalk']
+        
         if len(fclass) > 0:
             self.fclass = fclass
         else:
@@ -52,45 +52,66 @@ class PBFHandler(osmium.SimpleHandler):
                 'track', 'unclassified'
             ]
  
-        self.cycleways = {'crossing': 'Crossing',
+        self.bike_tags = [
+            'cycleway', 
+            'cycleway:right', 
+            'cycleway:left', 
+            'oneway:bicycle', 
+            'cycleway:both', 
+            'cycleway:buffer', 
+            'cycleway:right:buffer', 
+            'cycleway:left:buffer', 
+            'cycleway:both:buffer' 
+        ]
+
+
+        self.not_bike_facs = [
+                              'no', 
+                              'none', 
+                              'No', 
+                              'None', 
+                              'sidewalk', 
+                              'Sidewalk',
+                              'noneno',
+                              'traffic_island',
+                              'link',
+                              '\\',
+                              'closed_lane',
+                              'unmarked_lane'
+                              ]
+        # important this list needs to be ordered from least protection to greatest protection 
+        self.cycleways = {'proposed': 'Proposed',
+                          'crossing': 'Crossing',
+                          'asl': 'Advanced Stop Line',
+                          'shoulder': 'Shoulder',
                           'shared_lane': 'Shared Road', 
                           'opposite_share_busway': 'Shared Road',
                           'share_busway': 'Shared Road',
+                          'on_street': 'Shared Road',
+                          'shared_parking_lane': 'Shared Road',
+                          'shared': 'Shared Road',
                           'lane': 'Bike Lane', 
                           'lanes': 'Bike Lane',
                           'opposite_lane': 'Bike Lane', 
                           'opposite': 'Bike Lane', 
-                          'buffer': 'Buffered Bike Lane', 
-                          'buffered_lane': 'Buffered Bike Lane',  # Catch possible tagging mistakes
-                          'track': 'Protected Bike Lane',
-                          'opposite_track': 'Protected Bike Lane',
-                          'separate': 'Shared Use Path',
-                          'sidepath': 'Shared Use Path',
-                          'cycleway': 'Cycleway',
-                          'C ycleway': 'Cycleway',
-                          'yes': 'Bike Lane',
-                          'shared_parking_lane': 'Shared Lane',
-                          'shoulder': 'Shoulder',
-                          'shared': 'Shared Lane',
-                          'path': 'Shared Use Path',
-                          '1': 'Bike Lane',
-                          'right': 'Bike Lane',
-                          'on_street': 'Shared Lane',
-                          'unmarked_lane': 'Shoulder',
                           'designated': 'Bike Lane',
                           'both': 'Bike Lane',
-                          'lane=exlusive': 'None',
-                          'noneno': 'None',
-                          'traffic_island': 'None',
-                          'link': 'None',
-                          '\\': 'None',
+                          'yes': 'Bike Lane',
+                          '1': 'Bike Lane',
+                          'right': 'Bike Lane',
+                          'left': 'Bike Lane',
+                          'buffer': 'Buffered Bike Lane', 
+                          'buffered_lane': 'Buffered Bike Lane', 
+                          'track': 'Protected Bike Lane',
+                          'opposite_track': 'Protected Bike Lane',
+                          'lane=exlusive': 'Protected Bike Lane',
                           'lane=exclusive': 'Protected Bike Lane',
                           'protected lane': 'Protected Bike Lane',
-                          'closed_lane': 'None',
-                          'asl': 'Advanced Stop Line',
-                          'proposed': 'Proposed',
-                          'use_sidepath': 'None'
-                          
+                          'separate': 'Shared Use Path',
+                          'sidepath': 'Shared Use Path',
+                          'path': 'Shared Use Path',
+                          'use_sidepath': 'Shared Use Path',
+                          'cycleway': 'Cycleway',
         }
 
  
@@ -140,113 +161,143 @@ class PBFHandler(osmium.SimpleHandler):
             node_ids.append(node.ref)
         return node_ids
 
-    # confirm if way has an existing bicycle facility 
-    def _existing_bikeway(self, tags):
-        """
-        Determines if a given way has an existing bicycle facility
-        params 
-            - feature, feature object - osmium feature object from ways functions 
-        """ 
+    # get an indexed list of bike infra for use with self.cycleways
+    def _get_list_of_bike_infra(self, tags, minmax):
+        themin = -1
+        themax = len(self.bike_tags) + 1
 
-        if tags.get('highway') == 'cycleway': 
-            return 'Existing'
-        elif tags.get('cycleway') in list(self.cycleways.keys()):
-            if tags.get('cycleway') not in self.not_bike_facs:
-                return 'Existing'
-        if 'cycleway:both' in tags:
-            if tags['cycleway:both'] not in self.not_bike_facs:
-                return 'Existing'
-        elif 'cycleway:right' in tags or 'cycleway:left' in tags:
-            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in self.not_bike_facs:
-                    return 'Existing'
-            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in self.not_bike_facs:
-                    return 'Existing'
-            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
-                    return 'Existing'
-                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
-                    return 'Existing'
-                else: 
-                    return 'Existing'
+        for cur_tag in self.bike_tags:
+            if cur_tag in tags:
+                if tags[cur_tag] not in self.not_bike_facs:
+                    if minmax == 'max':
+                        if list(self.cycleways.keys()).index(tags[cur_tag]) > themin:
+                            themin = list(self.cycleways.keys()).index(tags[cur_tag])
+                    else:
+                        if list(self.cycleways.keys()).index(tags[cur_tag]) < themax:
+                            themax = list(self.cycleways.keys()).index(tags[cur_tag])
+        print(themin)
+        print(themax)
+        if minmax == 'max':
+            if themin != -1:
+                return list(self.cycleways.values())[themin]
+        elif minmax == 'min':
+            if themax != len(self.bike_tags) + 1:
+                return list(self.cycleways.values())[themax]
+        else:
+            return None
 
-    def _bike_infra(self, tags, min_max='max'):
+    def _get_oneway(self, tags):
+        #todo if null then no
+        if 'oneway' in tags:
+            if tags['oneway'] == 'yes':
+                return 'Yes'
+            else:
+                return 'No'
+        else:
+            return 'No'
+
+    def _mm_bike_infra(self, tags, min_max):
         """
         This function is used to check for an existing value within a feature's attribution tag list
         """
-        if 'cycleway:right' in tags or 'cycleway:left' in tags:
-            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in self.not_bike_facs:
-                    if min_max == 'max':
-                        return str(self.cycleways[tags['cycleway:right']])
-            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in self.not_bike_facs:
-                    if min_max == 'max':
-                        return self.cycleways[tags['cycleway:left']]
-            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
-                    return 'None'
-                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
-                    if min_max == 'max':
-                        return self.cycleways[tags['cycleway:left']]
-                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
-                    if min_max == 'max':
-                        return self.cycleways[tags['cycleway:right']]
-                else: 
-                    v1 = list(self.cycleways.keys()).index(tags['cycleway:right'])
-                    v2 = list(self.cycleways.keys()).index(tags['cycleway:left'])
-                    if min_max == 'min':
-                        return list(self.cycleways.values())[min([v2, v1])]
-                    else:
-                        return list(self.cycleways.values())[max([v2, v1])]
 
-        if 'cycleway:both' in tags:
+        if 'oneway' in tags:
+            if 'yes' in tags['oneway']:
+                return self._get_list_of_bike_infra(tags, 'max')
+
+        elif min_max == 'min':
+            return self._get_list_of_bike_infra(tags, 'min')
+            
+        elif min_max == 'max':
+            return self._get_list_of_bike_infra(tags, 'max')
+        
+        elif tags['highway'] == 'cycleway':
+            return 'Shared Use Path'
+
+
+    def _sided_bike_infra(self, tags, side):
+        if 'cycleway:{0}:buffer'.format(side) in tags:
+            if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
+                index = list(self.cycleways.keys()).index(tags['cycleway:{0}:buffer'.format(side)])
+                bl = list(self.cycleways.values())[index]
+                if bl == 'Bike Lane':
+                    return 'Buffered Bike Lane'
+                else:
+                    return bl
+        
+        elif 'cycleway:{0}'.format(side) in tags:
+            if tags['cycleway:{0}'.format(side)] not in self.not_bike_facs:
+                index = list(self.cycleways.keys()).index(tags['cycleway:{0}'.format(side)])
+                return list(self.cycleways.values())[index]
+
+        elif 'cycleway:both:buffer' in tags:
+            if tags['cycleway:both:buffer'] not in self.not_bike_facs:
+                index = list(self.cycleways.keys()).index(tags['cycleway:both:buffer'])
+                bl = list(self.cycleways.values())[index]
+                if bl == 'Bike Lane':
+                    return 'Buffered Bike Lane'
+                else:
+                    return bl
+
+        elif 'cycleway:both' in tags:
             if tags['cycleway:both'] not in self.not_bike_facs:
-                return self.cycleways[tags['cycleway:both']]
+                index = list(self.cycleways.keys()).index(tags['cycleway:both'])
+                return list(self.cycleways.values())[index]
 
         elif 'cycleway' in tags:
             if tags['cycleway'] not in self.not_bike_facs:
-                return list(self.cycleways.values())[list(self.cycleways.keys()).index(tags['cycleway'])]
+                index = list(self.cycleways.keys()).index(tags['cycleway'])
+                return list(self.cycleways.values())[index]
 
-    def _osmbike_infra(self, tags):
+        elif tags['highway'] == 'cycleway':
+            return 'Shared Use Path'
+
+    def _osmbike_infra(self, tags, side):
         """
         This function is used to check for an existing value within a feature's attribution tag list
         """
-        if 'cycleway:right' in tags or 'cycleway:left' in tags:
-            if 'cycleway:right' in tags and 'cycleway:left' not in tags:
-                if tags['cycleway:right'] not in self.not_bike_facs:
-                    return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
-            elif 'cycleway:right' not in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in self.not_bike_facs:
-                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
-            elif 'cycleway:right' in tags and 'cycleway:left' in tags:
-                if tags['cycleway:left'] not in self.not_bike_facs and tags['cycleway:right'] in self.not_bike_facs:
-                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: None'
-                elif tags['cycleway:left'] in self.not_bike_facs and tags['cycleway:right'] not in self.not_bike_facs:
-                    return 'Left: None; Right: ' + tags['cycleway:right'].capitalize()
-                else: 
-                    return 'Left: ' + tags['cycleway:left'].capitalize() + '; Right: ' + tags['cycleway:right'].capitalize()
+        if 'cycleway:{0}:buffer'.format(side) in tags:
+            if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
+                return tags['cycleway:{0}:buffer'.format(side)].capitalize()
         
+        elif 'cycleway:{0}'.format(side) in tags:
+            if tags['cycleway:{0}'.format(side)] not in self.not_bike_facs:
+                return tags['cycleway:{0}'.format(side)].capitalize()
+
+        elif 'cycleway:both:buffer' in tags:
+            if tags['cycleway:both:buffer'] not in self.not_bike_facs:
+                return tags['cycleway:both:buffer'].capitalize()
+
+        elif 'cycleway:both' in tags:
+            if tags['cycleway:both'] not in self.not_bike_facs:
+                return tags['cycleway:both'].capitalize()
+
         elif 'cycleway' in tags:
             if tags['cycleway'] not in self.not_bike_facs:
                 return tags['cycleway'].capitalize()
+
+        elif tags['highway'] == 'cycleway':
+            return 'cycleway'
+            
+    def _sided_bike_width(self, tags, side):
+
+        if 'cycleway:{0}:width'.format(side) in tags:
+            return tags['cycleway:{0}:buffer'.format(side)]
         
-        elif 'cycleway:both' in tags:
-                if tags['cycleway:both'] not in self.not_bike_facs:
-                    return tags['cycleway:both'].capitalize()
-        
-        elif tags.get('highway') == 'cycleway':
-            return 'Cycleway'
+        elif 'cycleway:both:width' in tags:
+            return tags['cycleway:both:width']
+
+        elif 'cycleway:width' in tags:
+            return tags['cycleway:width']
+
+    def _sided_lanes(self, tags, direction):
+        if 'lanes:{0}'.format(direction) in tags:
+            return tags['lanes:{0}'.format(direction)]
 
     def _get_integers(self, value):
         if value is not None:
             return ''.join(str(x) for x in [int(x) for x in value.split() if x.isdigit()])
  
-    def _capitalize(self, value):
-        if value is not None:
-            return value.capitalize()
-
     # handle nodes 
     def node(self, n):
         """
@@ -281,14 +332,27 @@ Osmium node function - with apply_file, creates a nodes object on the instantiat
                               'fclass': tags.get('highway'), 
                               'name': self._check('name', tags),
                               'maxspeed': self._get_integers(self._check('maxspeed', tags)), 
-                              'lanes': self._get_integers(self._check('lanes', tags)),
+
+                              'lanes_fwd': self._get_integers(self._sided_lanes(tags, 'forward')),
+                              'lanes_bwd': self._get_integers(self._sided_lanes(tags, 'backward')),
+
+                              'lanes_tot': self._get_integers(self._check('lanes', tags)),
+
                               'surface': self._check('surface', tags),
-                              'oneway': self._capitalize(self._check('oneway', tags)),
-                              'bike_stats': self._existing_bikeway(tags),
-                              'osmbk_infra': self._osmbike_infra(tags),
+                              'oneway': self._get_oneway(tags),
+                              'osmbk_left': self._osmbike_infra(tags, 'left'),
+                              'osmbk_right': self._osmbike_infra(tags, 'right'),
                               # 'desgnatd_bk': self._dsgnatd_bk(tags), # finding this isn't useful. Pulls a lot of sidewalks where bicycles are allowed.
-                              'min_bk_inf': self._bike_infra(tags, 'min'),
-                              'max_bk_inf': self._bike_infra(tags, 'max'),
+
+                              'bkwid_left': self._sided_bike_width(tags, 'left'),
+                              'bkwid_rght': self._sided_bike_width(tags, 'right'),
+
+                              'bkinf_left': self._sided_bike_infra(tags, 'left'),
+                              'bkinf_rght': self._sided_bike_infra(tags, 'right'),
+
+                              'min_bk_inf': self._mm_bike_infra(tags, 'min'),
+                              'max_bk_inf': self._mm_bike_infra(tags, 'max'),
+
                               'trf_signal': self._has_signalized_int(w,self.traffic_signal_ids),
                               'node_ids': ', '.join(str(e) for e in self._get_ways_node_ids(w)),
                               'geometry': self._create_geometry('linestring', w)
