@@ -6,8 +6,5 @@ dependencies:
   - numpy 
   - geopandas 
   - openpyxl
-  - h3
   - wget
-  - time
-  - osmium
   - shapely

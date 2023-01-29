@@ -8,11 +8,8 @@ from process_national_osm.python.h3_process import HandleH3
 import time
 
 import csv
-output_path = r'C:\code\locus_segment_estimates\process_national_osm\data'
-# files =   ['us_midwest', 'us_northeast', 'us_pacific', 'us_source', 'us_west']
-# files =   ['us_northeast']
-files = ['new_york']
-# files =   ['washington_dc']
+output_path = r'/src/data'
+files =   ['washington_dc']
 
 r = Roads() 
 h = HandleH3()
@@ -50,8 +47,8 @@ def process(filename, output_path):
     h3_indexes.to_csv(os.path.join(output_path, 'csv', 'h3_' + filename + '.csv'),  index = False)  
 
     # save h3 polygon 
-    h3_ploys_13 = h.get_hex_df(h3_indexes['h3_index_lv13'])
-    h3_ploys_4 = h.get_hex_df(h3_indexes['summary_hex_lv4'])
+    h3_ploys_13 = h.get_hex_gdf(h3_indexes['h3_index_lv13'])
+    h3_ploys_4 = h.get_hex_gdf(h3_indexes['summary_hex_lv4'])
 
     h3_ploys_13.to_file(os.path.join(output_path, 'gpkg', 'hexes', filename + '_h3_ploys_13.gpkg'), driver='GPKG', layer=filename)
     h3_ploys_4.to_file(os.path.join(output_path, 'gpkg', 'hexes', filename + '_h3_ploys_4.gpkg'), driver='GPKG', layer=filename)
