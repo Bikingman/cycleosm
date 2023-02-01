@@ -16,7 +16,8 @@ SHELL ["conda", "run", "-n", "roads", "/bin/bash", "-c"]
 
 ENV PYTHONPATH "${PYTHONPATH}:/src/python"
 
-RUN  pip install osmium
+RUN pip install osmium
+RUN pip install wget
 
 # Demonstrate the environment is activated:
 RUN echo "Make sure geopandas is installed:"
