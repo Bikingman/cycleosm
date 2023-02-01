@@ -7,7 +7,17 @@ import time
 
 output_path = r'/src/data'
 
-files = ['washington_dc']
+files = [
+  #     'colorado', 
+  #    'florida',
+  #    'oklahoma',
+  #    'texas',  
+  #    'virgina',
+      'washington'  
+ ]
+
+#files = ['washington_dc']
+
 fclass  = [          
     'motorway', 'motorway_link',
     'primary', 'primary_link',
