@@ -228,8 +228,9 @@ class PBFHandler(osmium.SimpleHandler):
         if min_max == 'max':
             return self._get_max_bike_infra(tags)
         
-        if tags['highway'] == 'cycleway':
-            return 'Shared Use Path'
+        if 'highway' in tags:
+            if tags['highway'] == 'cycleway':
+                return 'Shared Use Path'
 
     def _sided_bike_infra(self, tags, side): 
 
@@ -268,8 +269,9 @@ class PBFHandler(osmium.SimpleHandler):
                 index = list(self.cycleways.keys()).index(tags['oneway:bicycle'])
                 return list(self.cycleways.values())[index]
 
-        if tags['highway'] == 'cycleway':
-            return 'Shared Use Path'
+        if 'highway' in tags:
+            if tags['highway'] == 'cycleway':
+                return 'Shared Use Path'
 
     def _osmbike_infra(self, tags, side):
         """
@@ -300,8 +302,9 @@ class PBFHandler(osmium.SimpleHandler):
                 index = list(self.cycleways.keys()).index(tags['oneway:bicycle'])
                 return list(self.cycleways.values())[index]
 
-        if tags['highway'] == 'cycleway':
-            return 'cycleway'
+        if 'highway' in tags:
+            if tags['highway'] == 'cycleway':
+                return 'Shared Use Path'
 
 
     def _sided_bike_width(self, tags, side):
