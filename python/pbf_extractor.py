@@ -310,7 +310,7 @@ class PBFHandler(osmium.SimpleHandler):
     def _sided_bike_width(self, tags, side):
 
         if 'cycleway:{0}:width'.format(side) in tags:
-            return tags['cycleway:{0}:buffer'.format(side)]
+            return tags['cycleway:{0}:width'.format(side)]
         
         if 'cycleway:both:width' in tags:
             return tags['cycleway:both:width']
