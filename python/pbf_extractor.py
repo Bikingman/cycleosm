@@ -99,7 +99,9 @@ class PBFHandler(osmium.SimpleHandler):
                           '1': 'Bike Lane',
                           '5': 'Bike Lane',
                           'right': 'Bike Lane',
+                          'right:lane': 'Bike Lane',
                           'left': 'Bike Lane',
+                          'construction': 'Bike Lane',
                           'buffer': 'Buffered Bike Lane', 
                           'buffered_lane': 'Buffered Bike Lane', 
                           'track': 'Protected Bike Lane',
@@ -111,8 +113,8 @@ class PBFHandler(osmium.SimpleHandler):
                           'sidepath': 'Shared Use Path',
                           'path': 'Shared Use Path',
                           'use_sidepath': 'Shared Use Path',
+                          'shar': 'Shared Use Path',
                           'cycleway': 'Cycleway'
-                          
         }
 
  
@@ -310,7 +312,7 @@ class PBFHandler(osmium.SimpleHandler):
     def _sided_bike_width(self, tags, side):
 
         if 'cycleway:{0}:width'.format(side) in tags:
-            return tags['cycleway:{0}:buffer'.format(side)]
+            return tags['cycleway:{0}:width'.format(side)]
         
         if 'cycleway:both:width' in tags:
             return tags['cycleway:both:width']

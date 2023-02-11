@@ -6,5 +6,4 @@ dependencies:
   - numpy 
   - geopandas 
   - openpyxl
-  - wget
   - shapely
