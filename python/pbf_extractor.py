@@ -140,7 +140,10 @@ class PBFHandler(osmium.SimpleHandler):
             - feature, feature object - osmium feature object from ways/nodes functions
         """
         if type == 'linestring':
-            return wkblib.loads(wkbfab.create_linestring(feature), hex=True)
+            try: 
+                return wkblib.loads(wkbfab.create_linestring(feature), hex=True)
+            except: 
+                pass
 
     # confirm if way has a node with a signalized intersection 
     def _has_signalized_int(self, feature, traffic_sig_ids):
