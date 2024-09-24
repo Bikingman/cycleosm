@@ -18,6 +18,7 @@ import os
 import geopandas as gpd
 from multiprocessing import Pool
 import csv 
+import wget
 
 wkbfab = osmium.geom.WKBFactory()
 
@@ -39,9 +40,10 @@ class PBFHandler(osmium.SimpleHandler):
         if len(fclassfile) > 0 and os.path.exists(fclassfile) and fclassfile.endswith('.csv'):
             self.fclass = list(map(lambda row: row, csv.reader(open(fclassfile, mode='r'))))
         else:
+            print(__file__)
             fclasses = os.path.join(os.path.dirname(__file__), 'static', 'osm_links - fclasses.csv')
             if os.path.exists(fclasses) and fclasses.endswith('.csv'):
-                self.fclass = list(map(lambda row: row, csv.reader(open(fclasses, mode='r'))))
+                self.fclass = self._read_csv_to_list(fclasses)
             else:
                 raise FileNotFoundError("No valid CSV file found for fclasses.")
 
@@ -49,32 +51,68 @@ class PBFHandler(osmium.SimpleHandler):
         cycleways = cyclewaysfile if cyclewaysfile and os.path.exists(cyclewaysfile) and cyclewaysfile.endswith('.csv') else os.path.join(os.path.dirname(__file__), 'static', 'osm_links - cycleways.csv')
         if os.path.exists(cycleways) and cycleways.endswith('.csv'):
             with open(cycleways, mode='r') as file:
-                self.bike_tags = list(map(lambda row: row, csv.reader(file)))
+                self.cycleways = self._read_csv_to_list(file)
         else:
             raise FileNotFoundError("No valid CSV file found for cycleways.")
 
+        not_bike_facs = not_bike_facs if not_bike_facs and os.path.exists(not_bike_facs) and not_bike_facs.endswith('.csv') else os.path.join(os.path.dirname(__file__), 'static', 'osm_links - not_bikelanes.csv')
+        if os.path.exists(not_bike_facs) and not_bike_facs.endswith('.csv'):
+            with open(not_bike_facs, mode='r') as file:
+                self.not_bike_facs = self._read_csv_to_list(file)
+        else:
+            raise FileNotFoundError("No valid CSV file found for not bike lanes.")
 
-        self.not_bike_facs = [
-                              'no', 
-                              'none', 
-                              'No', 
-                              'None', 
-                              'sidewalk', 
-                              'Sidewalk',
-                              'noneno',
-                              'traffic_island',
-                              'link',
-                              '\\',
-                              'closed_lane',
-                              'unmarked_lane',
-                              '-1'
-                              ]
-        # important this list needs to be ordered from least protection to greatest protection 
-        self.cycleways = list(map(lambda row: row, csv.reader(path)))
 
-    def _readCSV(self, file):
-        print(file)
+
+    def _download_pbf(self, pbf_url, filename):
+        """
+        Downloads an individual OSM PBF file from the given URL and saves it to the specified path.
+        """
+        try:
+            wget.download(pbf_url, out=filename)
+            print(f"Download completed: {filename}")
+        except Exception as e:
+            print(f"Failed to download {filename} from {pbf_url}. Error: {e}")
+
+    def parse_pbfs(self):
+        """
+        Parses the URLs from the user and downloads the associated OSM PBF files.
+        """
+        for filename, url in self.pbf_dict.items():
+            start_time = time.time()
+            file_path = os.path.join(self.output_path, filename + '.pbf')
+            
+            if os.path.exists(file_path):
+                print(f"File {file_path} already exists. Skipping download.")
+                continue
+
+            print(f"Starting download for {filename}...")
+            self._download_pbf(url, file_path)
+            
+            download_time = (time.time() - start_time) / 60
+            print(f"Time to download file {filename}: {download_time:.2f} minutes.")
+
+
+    def _read_csv_to_list(self, file_path):
+        data_list = []
+        with open(file_path, mode='r', newline='') as file:
+            csv_reader = csv.reader(file)
+            for row in csv_reader:
+                data_list.append(row)
+        return data_list
         
+    def _csv_to_dict(self, file_path):
+        data_dict = {}
+        with open(file_path, mode='r', newline='') as file:
+            csv_reader = csv.reader(file)
+            for row in csv_reader:
+                # Assuming there are at least two columns
+                if len(row) >= 2:
+                    key = row[0]   # First column as the key
+                    value = row[1] # Second column as the value
+                    data_dict[key] = value
+        return data_dict
+
 
     def _check(self, name, tags):
         """
