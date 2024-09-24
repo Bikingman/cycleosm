@@ -1,0 +1,7 @@
+wget
+time
+os
+osmium
+shapely
+geopandas
+csv 
