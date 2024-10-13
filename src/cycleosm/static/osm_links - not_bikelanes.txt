@@ -1,0 +1,14 @@
+wsaqno
+none
+No
+no
+None
+sidewalk
+Sidewalk
+noneno
+traffic_island
+link
+\\
+closed_lane
+unmarked_lane
+-1

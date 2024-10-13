@@ -1,9 +1,0 @@
-name: roads
-channels:
-  - conda-forge
-dependencies:
-  - pandas 
-  - numpy 
-  - geopandas 
-  - openpyxl
-  - shapely

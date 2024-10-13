@@ -1,0 +1,33 @@
+[build-system]
+requires = [
+  "hatchling",
+  "wget",
+  "osmium",
+  "geopandas",
+  "pathlib"
+  ]
+build-backend = "hatchling.build"
+
+[project] 
+name = "cycleosm"
+version = "0.0.1"
+description = "A small package to download structured bike infrastructure data from Open Street Map (OSM)."
+readme = "README.md"
+authors = [
+  { name="Daniel Patterson", email="daniel.patterson87@gmail.com" },
+]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    'Environment :: Console',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3 :: Only'
+]
+
+[project.urls]
+homepage = "https://github.com/Bikingman/cycleosm"
+documentation = 'https://github.com/Bikingman/cycleosm'
+repository = 'https://github.com/Bikingman/cycleosm'
+"Bug Tracker" = "https://github.com/Bikingman/cycleosm/issues"

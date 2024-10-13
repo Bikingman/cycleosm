@@ -1,0 +1,37 @@
+Unkown,Unkown
+proposed,Proposed
+crossing,Crossing
+asl,Advanced Stop Line
+shoulder,Shoulder
+shared_lane,Shared Road
+opposite_share_busway,Shared Road
+share_busway,Shared Road
+on_street,Shared Road
+shared_parking_lane,Shared Road
+shared,Shared Road
+lane,Bike Lane
+lanes,Bike Lane
+opposite_lane,Bike Lane
+opposite,Bike Lane
+designated,Bike Lane
+both,Bike Lane
+yes,Bike Lane
+1,Bike Lane
+5,Bike Lane
+right,Bike Lane
+right lane,Bike Lane
+left,Bike Lane
+construction,Bike Lane
+buffer,Buffered Bike Lane
+buffered_lane,Buffered Bike Lane
+track,Protected Bike Lane
+opposite_track,Protected Bike Lane
+lane=exlusive,Protected Bike Lane
+lane=exclusive,Protected Bike Lane
+protected lane,Protected Bike Lane
+separate,Shared Use Path
+sidepath,Shared Use Path
+path,Shared Use Path
+use_sidepath,Shared Use Path
+shar,Shared Use Path
+cycleway,Cycleway
