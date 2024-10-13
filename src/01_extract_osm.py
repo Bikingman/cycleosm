@@ -2,15 +2,13 @@
 
 import os 
 import geopandas as gpd
-from src.python.pbf_extractor import PBFHandler 
+from python.bikeosm import PBFHandler 
 import time
 
 output_path = r'/src/data'
 
 files = 'states'
 fclass = 'fclass'
-
-
 
 # extract roads and nodes 
 def process(filename, output_path, road_fclasses):

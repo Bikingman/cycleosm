@@ -1,3 +1,3 @@
-Library for extracting and standardizing large OSM datasets.
+# bikeosm
 
-Contains utilities for retrieving H3 indexes. 
+A small package to download structured bike infrastructure data from Open Street Map (OSM).

@@ -10,108 +10,86 @@ Source of PBFs: https://download.geofabrik.de/
 
 """
 
-
 import osmium
 import shapely.wkb as wkblib
 import time
-import os 
+import os
 import geopandas as gpd
 from multiprocessing import Pool
-import csv 
-import wget
+from typing import Dict, Optional
+import logging
+from python.pbfdownloader import PBFDownloader
+from python.utils import Utils 
 
 wkbfab = osmium.geom.WKBFactory()
 
-class PBFHandler(osmium.SimpleHandler):
-    """
-    This python class is an extension of the osmium library to extract geopandas dataframes of OSM data from OSM PBF files. 
-    Workflow: after instantiating the PBFHanlder class with the required inputs, point to a PBF file and use the apply_file() method to get a nodes and ways file.   
-    
-    Params: 
-        - fclass, list type - list of functional classification names 
-    """
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    def __init__(self, fclassfile, biketagsfile, cyclewaysfile):
-        super(PBFHandler, self).__init__()
+class BikeOSM(osmium.SimpleHandler, Utils):
+    """
+        This module provides classes to download and extract OpenStreetMap (OSM) PBF files. 
+        OSM PBF is an efficient binary format for storing OSM data, generally smaller and faster to process than OSM XML files.
+
+        Classes:
+            - PBFDownloader: Downloads OSM PBF files from a specified source.
+            - BikeOSMHandler: Parses OSM PBF files to extract bike-related GIS data into GeoPandas DataFrames.
+
+        Source of PBF Files:
+            https://download.geofabrik.de/
+
+        Dependencies:
+            - osmium
+            - shapely
+            - geopandas
+            - multiprocessing
+            - wget
+
+        Example:
+            ```python
+            downloader = PBFDownloader(pbf_dict, output_path)
+            downloader.download_all()
+
+            handler = BikeOSMHandler(fclassfile, biketagsfile, cyclewaysfile, pbf_dict, output_path)
+            handler.handle_pbfs(files, output_path)
+            ```
+        """
+
+    def __init__( self, 
+        pbf_dict: Dict[str, str], 
+        output_path: str,
+        fclassfile: Optional[str] = None,
+        biketagsfile: Optional[str] = None,
+        cyclewaysfile: Optional[str]  = None,
+        not_bike_facsfile: Optional[str] = None
+        ):
         self.ways = []
         self.traffic_signal_ids = []
         self.nodes = {'id': [], 'traffic_signals': [], 'geometry': []}
+        self.pbf_dict = pbf_dict
+        self.output_path = output_path
+
+        cpp = os.path.dirname(__file__)
+        sttc = 'static'
+        t = 'osm_links - cycleways.txt'
+        cy = 'osm_links - tags.csv'
+        nb = 'osm_links - not_bikelanes.txt'
+        fc = 'osm_links - fclasses.txt'
+
+        def static_filepath(c, s, f):
+            return os.path.join(c, s, f)
         
-        if len(fclassfile) > 0 and os.path.exists(fclassfile) and fclassfile.endswith('.csv'):
-            self.fclass = list(map(lambda row: row, csv.reader(open(fclassfile, mode='r'))))
-        else:
-            print(__file__)
-            fclasses = os.path.join(os.path.dirname(__file__), 'static', 'osm_links - fclasses.csv')
-            if os.path.exists(fclasses) and fclasses.endswith('.csv'):
-                self.fclass = self._read_csv_to_list(fclasses)
-            else:
-                raise FileNotFoundError("No valid CSV file found for fclasses.")
-
-
-        cycleways = cyclewaysfile if cyclewaysfile and os.path.exists(cyclewaysfile) and cyclewaysfile.endswith('.csv') else os.path.join(os.path.dirname(__file__), 'static', 'osm_links - cycleways.csv')
-        if os.path.exists(cycleways) and cycleways.endswith('.csv'):
-            with open(cycleways, mode='r') as file:
-                self.cycleways = self._read_csv_to_list(file)
-        else:
-            raise FileNotFoundError("No valid CSV file found for cycleways.")
-
-        not_bike_facs = not_bike_facs if not_bike_facs and os.path.exists(not_bike_facs) and not_bike_facs.endswith('.csv') else os.path.join(os.path.dirname(__file__), 'static', 'osm_links - not_bikelanes.csv')
-        if os.path.exists(not_bike_facs) and not_bike_facs.endswith('.csv'):
-            with open(not_bike_facs, mode='r') as file:
-                self.not_bike_facs = self._read_csv_to_list(file)
-        else:
-            raise FileNotFoundError("No valid CSV file found for not bike lanes.")
-
-
-
-    def _download_pbf(self, pbf_url, filename):
-        """
-        Downloads an individual OSM PBF file from the given URL and saves it to the specified path.
-        """
-        try:
-            wget.download(pbf_url, out=filename)
-            print(f"Download completed: {filename}")
-        except Exception as e:
-            print(f"Failed to download {filename} from {pbf_url}. Error: {e}")
-
-    def parse_pbfs(self):
-        """
-        Parses the URLs from the user and downloads the associated OSM PBF files.
-        """
-        for filename, url in self.pbf_dict.items():
-            start_time = time.time()
-            file_path = os.path.join(self.output_path, filename + '.pbf')
-            
-            if os.path.exists(file_path):
-                print(f"File {file_path} already exists. Skipping download.")
-                continue
-
-            print(f"Starting download for {filename}...")
-            self._download_pbf(url, file_path)
-            
-            download_time = (time.time() - start_time) / 60
-            print(f"Time to download file {filename}: {download_time:.2f} minutes.")
-
-
-    def _read_csv_to_list(self, file_path):
-        data_list = []
-        with open(file_path, mode='r', newline='') as file:
-            csv_reader = csv.reader(file)
-            for row in csv_reader:
-                data_list.append(row)
-        return data_list
-        
-    def _csv_to_dict(self, file_path):
-        data_dict = {}
-        with open(file_path, mode='r', newline='') as file:
-            csv_reader = csv.reader(file)
-            for row in csv_reader:
-                # Assuming there are at least two columns
-                if len(row) >= 2:
-                    key = row[0]   # First column as the key
-                    value = row[1] # Second column as the value
-                    data_dict[key] = value
-        return data_dict
+        self.biketagsfile  = static_filepath(cpp, sttc, t) if biketagsfile == None else biketagsfile
+        self.cyclewaysfile  = static_filepath(cpp, sttc, cy) if cyclewaysfile == None else cyclewaysfile
+        self.not_bike_facsfile  = static_filepath(cpp, sttc, nb) if not_bike_facsfile == None else not_bike_facsfile
+        self.fclassfile  = static_filepath(cpp, sttc, fc) if fclassfile == None else fclassfile
+         
+   
+        self.fclass = self._load_txt(self.fclassfile)
+        self.not_bike_facs = self._load_txt(self.not_bike_facsfile)
+        self.biketags = self._load_txt(self.biketagsfile) 
+        self.cycleways = self._load_csv_as_dict(self.cyclewaysfile)
 
 
     def _check(self, name, tags):
@@ -175,6 +153,7 @@ class PBFHandler(osmium.SimpleHandler):
 
     # get an indexed list of bike infra for use with self.cycleways
     def _get_min_bike_infra(self, tags):
+   
         if self._get_oneway(tags) == 'Yes':
             return self._get_max_bike_infra(tags)
         if self._sided_bike_infra(tags, 'left') == None:
@@ -276,10 +255,25 @@ class PBFHandler(osmium.SimpleHandler):
         except:
             return 'Unkown'
 
+    def _bicycle_route(self, tags):
+        """
+        This function is used determine if a route is a bicycle route.
+        """
+        if 'route' in tags:
+            print(tags)
+            if tags['route'] == 'bicycle':
+                return 'Bicycle Route'
+        else:
+            return None
+        
     def _osmbike_infra(self, tags, side):
         """
         This function is used to check for an existing value within a feature's attribution tag list
         """
+        if 'highway' in tags:
+                if tags['highway'] == 'cycleway':
+                    return 'Shared Use Path'
+                
         if 'cycleway:{0}:buffer'.format(side) in tags:
             if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
                 return tags['cycleway:{0}:buffer'.format(side)].capitalize()
@@ -305,9 +299,7 @@ class PBFHandler(osmium.SimpleHandler):
                 index = list(self.cycleways.keys()).index(tags['oneway:bicycle'])
                 return list(self.cycleways.values())[index]
 
-        if 'highway' in tags:
-            if tags['highway'] == 'cycleway':
-                return 'Shared Use Path'
+        
 
 
     def _sided_bike_width(self, tags, side):
@@ -364,6 +356,8 @@ class PBFHandler(osmium.SimpleHandler):
         To learn more about this osmium and pyosmium, please visit https://docs.osmcode.org/pyosmium/latest/intro.html#reading-osm-data.    
         """ 
         tags = w.tags
+        print(*tags)
+        print('``````````````````````````````````````')
         highway_type = tags.get('highway')
 
         # Early return if conditions are not met
@@ -396,6 +390,8 @@ class PBFHandler(osmium.SimpleHandler):
             'osmbk_right': self._osmbike_infra(tags, 'right'),
             # 'desgnatd_bk': self._dsgnatd_bk(tags), # finding this isn't useful. Pulls a lot of sidewalks where bicycles are allowed.
 
+            'bk_route': self._bicycle_route(tags),
+
             'bkwid_left': self._sided_bike_width(tags, 'left'),
             'bkwid_rght': self._sided_bike_width(tags, 'right'),
 
@@ -409,39 +405,42 @@ class PBFHandler(osmium.SimpleHandler):
         })
 
 
-    def handle_pbfs(self, files, output_path, road_fclasses, handle_ways=True, handle_nodes=True):
+    def handle_pbfs(self, files=None, output_path=None, handle_ways=True, handle_nodes=True):
         """
         Handles multiple PBF files, processes them, and outputs to Shapefile format.
         """
-
+        files = self.pbf_dict if files == None else files 
+        output_path = self.output_path if output_path == None else output_path
         start_time = time.time()
 
-        def process_file(filename):
+        def process_file(filename, output_path):
             # Instantiate handler for each file
-            handler = PBFHandler(fclass=road_fclasses)
-            full_filename = os.path.join(output_path, 'pbf', filename + '.pbf')
+            downloader = PBFDownloader(self.pbf_dict, self.output_path)
+            downloader.download_all()
+            full_filename = os.path.join(output_path, filename + '.pbf')
             print(f"Processing {full_filename}")
 
             # Apply file and process nodes and ways
-            handler.apply_file(full_filename, locations=True)
+            self.apply_file(full_filename, locations=True)
             
             # Output file paths
-            ways_output = os.path.join(output_path, 'shp', 'osm', filename + '_ways.shp')
-            nodes_output = os.path.join(output_path, 'shp', 'osm', filename + '_nodes.shp')
+            ways_output = os.path.join(output_path, filename + '_ways.shp')
+            nodes_output = os.path.join(output_path, filename + '_nodes.shp')
 
-            if handle_ways and handler.ways:
-                ways_df = gpd.GeoDataFrame(handler.ways).set_index('id').set_crs(4326, allow_override=True)
-                ways_df.to_parquet(ways_output)
+            if handle_ways and self.ways:
+                ways_df = gpd.GeoDataFrame(self.ways).set_index('id').set_crs(4326, allow_override=True)
+                ways_df.to_file(ways_output)
 
-            if handle_nodes and handler.nodes:
-                nodes_df = gpd.GeoDataFrame(handler.nodes).set_index('id').set_crs(4326, allow_override=True)
-                nodes_df.to_parquet(nodes_output)
+            if handle_nodes and self.nodes:
+                nodes_df = gpd.GeoDataFrame(self.nodes).set_index('id').set_crs(4326, allow_override=True)
+                nodes_df.to_file(nodes_output)
 
             print(f"Finished {filename}.pbf in {round((time.time() - start_time) / 60, 2)} minutes.")
         
         # Use multiprocessing to handle files in parallel
-        with Pool(3) as pool:
-            pool.map(process_file, files)
-
+        # with Pool(3) as pool:
+        #     pool.map(process_file, files, output_path)
+        for f in files:
+            process_file(f, output_path)
         total_time = (time.time() - start_time) / 60
         print(f"Total time to process all files: {total_time:.2f} minutes.")
