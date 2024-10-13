@@ -2,4 +2,3 @@
 osmium
 geopandas
 pathlib
-multiprocessing

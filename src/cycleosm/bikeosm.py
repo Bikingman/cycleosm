@@ -15,11 +15,10 @@ import shapely.wkb as wkblib
 import time
 import os
 import geopandas as gpd
-from multiprocessing import Pool
 from typing import Dict, Optional
 import logging
-from python.pbfdownloader import PBFDownloader
-from python.utils import Utils 
+from cycleosm.pbfdownloader import PBFDownloader
+from cycleosm.utils import Utils 
 
 wkbfab = osmium.geom.WKBFactory()
 
@@ -43,7 +42,6 @@ class BikeOSM(osmium.SimpleHandler, Utils):
             - osmium
             - shapely
             - geopandas
-            - multiprocessing
             - wget
 
         Example:
@@ -239,6 +237,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
                 if tags['cycleway:both'] not in self.not_bike_facs:
                     index = list(self.cycleways.keys()).index(tags['cycleway:both'])
                     return list(self.cycleways.values())[index]
+                
             if 'cycleway' in tags:
                 if tags['cycleway'] not in self.not_bike_facs:
                     index = list(self.cycleways.keys()).index(tags['cycleway'])
@@ -271,8 +270,8 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         This function is used to check for an existing value within a feature's attribution tag list
         """
         if 'highway' in tags:
-                if tags['highway'] == 'cycleway':
-                    return 'Shared Use Path'
+            if tags['highway'] == 'cycleway':
+                return 'Cycleway'
                 
         if 'cycleway:{0}:buffer'.format(side) in tags:
             if tags['cycleway:{0}:buffer'.format(side)] not in self.not_bike_facs:
@@ -358,11 +357,13 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         tags = w.tags
         print(*tags)
         print('``````````````````````````````````````')
-        highway_type = tags.get('highway')
 
         # Early return if conditions are not met
-        if not (('highway' in tags and highway_type in self.fclass) or ('cycleway' in tags and highway_type != 'proposed')):
+        if not (('highway' in tags and highway_type in self.fclass)):
             return
+
+        highway_type = tags.get('highway')
+
 
         # Append the way with pre-fetched values
         self.ways.append({
@@ -407,7 +408,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
 
     def handle_pbfs(self, files=None, output_path=None, handle_ways=True, handle_nodes=True):
         """
-        Handles multiple PBF files, processes them, and outputs to Shapefile format.
+        Handles  PBF files, processes them, and outputs to Shapefile format.
         """
         files = self.pbf_dict if files == None else files 
         output_path = self.output_path if output_path == None else output_path
@@ -437,9 +438,6 @@ class BikeOSM(osmium.SimpleHandler, Utils):
 
             print(f"Finished {filename}.pbf in {round((time.time() - start_time) / 60, 2)} minutes.")
         
-        # Use multiprocessing to handle files in parallel
-        # with Pool(3) as pool:
-        #     pool.map(process_file, files, output_path)
         for f in files:
             process_file(f, output_path)
         total_time = (time.time() - start_time) / 60

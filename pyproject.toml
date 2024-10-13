@@ -1,11 +1,12 @@
 [build-system]
 requires = [
+  "hatchling",
   "wget",
   "osmium",
-  "geopandas"
+  "geopandas",
+  "pathlib"
   ]
-
-build-backend = "cycleosm"
+build-backend = "hatchling.build"
 
 [project] 
 name = "cycleosm"

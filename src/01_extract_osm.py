@@ -2,7 +2,7 @@
 
 import os 
 import geopandas as gpd
-from python.bikeosm import PBFHandler 
+from cycleosm.bikeosm import PBFHandler 
 import time
 
 output_path = r'/src/data'
