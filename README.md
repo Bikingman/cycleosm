@@ -3,8 +3,6 @@
 [![PyPI version](https://img.shields.io/pypi/v/cycleosm.svg)](https://pypi.org/project/cycleosm/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-
-
 The purpose of CycleOSM is to download structured bike infrastructure data from Open Street Map (OSM).
 
 Now on [PyPl](https://pypi.org/project/cycleosm/)
