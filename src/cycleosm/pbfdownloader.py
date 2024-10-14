@@ -47,6 +47,10 @@ class PBFDownloader:
         """
         
         com_filename = os.path.join(self.output_path, f"{filename}")
+            
+        if os.path.exists(com_filename):
+            print(f"File {com_filename} already exists. Skipping download.")
+            return
 
         try:
             wget.download(pbf_url, out=com_filename)
