@@ -5,7 +5,7 @@
 
 The purpose of CycleOSM is to download structured bike infrastructure data from Open Street Map (OSM).
 
-Now on [PyPl](https://pypi.org/project/cycleosm/)
+Now on [PyPi](https://pypi.org/project/cycleosm/)
 
 This package is easy to use. You can get started by installing the package: 
 ```
