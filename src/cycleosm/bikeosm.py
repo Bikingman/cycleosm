@@ -409,7 +409,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         files = self.pbf_dict if files == None else files 
         output_path = self.output_path if output_path == None else output_path
         downloader = PBFDownloader(self.pbf_dict, self.output_path)
-
+        o_startime = time.time()
         def process_file(filename, output_path):
             # set start time to output time taken for each iteration 
             start_time = time.time()
@@ -441,5 +441,5 @@ class BikeOSM(osmium.SimpleHandler, Utils):
             self.traffic_signal_ids = []
             self.nodes = {'id': [], 'trfc_sgnls': [], 'geometry': []}
             process_file(f, output_path)
-        total_time = (time.time() - start_time) / 60
+        total_time = (time.time() - o_startime) / 60
         print(f"Total time to process all files: {total_time:.2f} minutes.")
