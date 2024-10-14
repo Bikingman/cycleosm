@@ -408,12 +408,13 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         """
         files = self.pbf_dict if files == None else files 
         output_path = self.output_path if output_path == None else output_path
-        start_time = time.time()
         downloader = PBFDownloader(self.pbf_dict, self.output_path)
 
         def process_file(filename, output_path):
-            # Instantiate handler for each file
+            # set start time to output time taken for each iteration 
+            start_time = time.time()
 
+            # Instantiate handler for each file
             full_filename = os.path.join(output_path, filename + '.pbf')
             print(f"Processing {full_filename}")
 
