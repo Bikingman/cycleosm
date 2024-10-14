@@ -46,7 +46,7 @@ class PBFDownloader:
             filename (str): Destination filename.
         """
         
-        com_filename = os.path.join(self.output_path, f"{filename}")
+        com_filename = os.path.join(self.output_path, f"{filename}.pbf")
             
         if os.path.exists(com_filename):
             print(f"File {com_filename} already exists. Skipping download.")
