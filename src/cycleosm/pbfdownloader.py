@@ -46,7 +46,7 @@ class PBFDownloader:
             filename (str): Destination filename.
         """
         
-        com_filename = os.path.join(self.output_path, f"{filename}.pbf")
+        com_filename = os.path.join(self.output_path, f"{filename}")
 
         try:
             wget.download(pbf_url, out=com_filename)
@@ -60,7 +60,7 @@ class PBFDownloader:
         """
         for filename, url in self.pbf_dict.items():
 
-            complete_file_path = os.path.join(self.output_path, f"{filename}.pbf")
+            complete_file_path = os.path.join(self.output_path, f"{filename}")
             
             if os.path.exists(complete_file_path) and replace==False:
                 print(f"File {complete_file_path} already exists. Skipping download.")
@@ -70,5 +70,5 @@ class PBFDownloader:
                 os.remove(complete_file_path)
 
             print(f"Starting download for {filename}...")
-            
-            self.download_pbf(url, self.output_path, f"{filename}.pbf")
+
+            self.download_pbf(url, f"{filename}.pbf")
