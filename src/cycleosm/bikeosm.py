@@ -435,7 +435,10 @@ class BikeOSM(osmium.SimpleHandler, Utils):
             print(f"Finished {filename}.pbf in {round((time.time() - start_time) / 60, 2)} minutes.")
 
         for f, url in files.items():
-            downloader.download_pbf(url, output_path)
+            downloader.download_pbf(url, f)
+            self.ways = []
+            self.traffic_signal_ids = []
+            self.nodes = {'id': [], 'trfc_sgnls': [], 'geometry': []}
             process_file(f, output_path)
         total_time = (time.time() - start_time) / 60
         print(f"Total time to process all files: {total_time:.2f} minutes.")
