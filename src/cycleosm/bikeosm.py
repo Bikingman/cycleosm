@@ -64,7 +64,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         ):
         self.ways = []
         self.traffic_signal_ids = []
-        self.nodes = {'id': [], 'traffic_signals': [], 'geometry': []}
+        self.nodes = {'id': [], 'trfc_sgnls': [], 'geometry': []}
         self.pbf_dict = pbf_dict
         self.output_path = output_path
 
@@ -259,7 +259,6 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         This function is used determine if a route is a bicycle route.
         """
         if 'route' in tags:
-            print(tags)
             if tags['route'] == 'bicycle':
                 return 'Bicycle Route'
         else:
@@ -334,7 +333,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
             return
 
         # Extract signalized intersections
-        is_traffic_signal = highway_type == 'traffic_signals'
+        is_traffic_signal = highway_type == 'trfc_sgnls'
         if is_traffic_signal:
             self.traffic_signal_ids.append(n.id)
 
@@ -344,7 +343,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
 
         # Append data to the nodes dictionary
         self.nodes['id'].append(n.id)
-        self.nodes['traffic_signals'].append(is_traffic_signal)
+        self.nodes['trfc_sgnls'].append(is_traffic_signal)
         self.nodes['geometry'].append(shp)
 
 
@@ -355,30 +354,27 @@ class BikeOSM(osmium.SimpleHandler, Utils):
         To learn more about this osmium and pyosmium, please visit https://docs.osmcode.org/pyosmium/latest/intro.html#reading-osm-data.    
         """ 
         tags = w.tags
-        print(*tags)
-        print('``````````````````````````````````````')
+
+        highway_type = tags.get('highway')
 
         # Early return if conditions are not met
         if not (('highway' in tags and highway_type in self.fclass)):
             return
 
-        highway_type = tags.get('highway')
-
-
         # Append the way with pre-fetched values
         self.ways.append({
 
             'id': w.id, 
-            'node_ids': ', '.join(str(e) for e in self._get_ways_node_ids(w)),
+            #'node_ids': ', '.join(str(e) for e in self._get_ways_node_ids(w)),
 
             'fclass': tags.get('highway'), 
             'name': self._check('name', tags),
-            'lane_markings': self._check('lane_markings', tags),
-            'srvc_rd_typ': self._check('service', tags),
+            'ln_mrkngs': self._check('lane_markings', tags),
+            'svc_rd_typ': self._check('service', tags),
             'turn': self._check('turn', tags),
 
             'maxspeed': self._get_integers(self._check('maxspeed', tags)), 
-            'trf_signal': self._has_signalized_int(w,self.traffic_signal_ids),
+            'trf_sgnl': self._has_signalized_int(w,self.traffic_signal_ids),
 
             'surface': self._check('surface', tags),
             'oneway': self._get_oneway(tags),
@@ -388,7 +384,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
             'lanes_tot': self._get_integers(self._check('lanes', tags)),
 
             'osmbk_left': self._osmbike_infra(tags, 'left'),
-            'osmbk_right': self._osmbike_infra(tags, 'right'),
+            'osmbk_rght': self._osmbike_infra(tags, 'right'),
             # 'desgnatd_bk': self._dsgnatd_bk(tags), # finding this isn't useful. Pulls a lot of sidewalks where bicycles are allowed.
 
             'bk_route': self._bicycle_route(tags),

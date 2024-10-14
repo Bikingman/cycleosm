@@ -17,6 +17,23 @@ class PBFDownloader:
             pbf_dict (Dict[str, str]): Mapping of filename to PBF URL.
             output_path (str): Directory to save downloaded PBF files.
         """
+        if pbf_dict is None:
+           raise ValueError(
+                """
+                A dictionary of .pbf file URLs was not provided. 
+                Hint: Supply a dictionary where the key is the desired filename, 
+                and the value is the URL to the corresponding .pbf file.
+                
+                Example:
+                    urls = {
+                        'District of Columbia': 'http://download.geofabrik.de/north-america/us/district-of-columbia-latest.osm.pbf'
+                    }
+                """
+            )
+
+        if output_path is None:
+            raise ValueError(f"\nOutput folder was not supplied. Hint: provide an output directory path.")
+
         self.output_path = output_path  
         self.pbf_dict = pbf_dict  
 
@@ -28,21 +45,30 @@ class PBFDownloader:
             pbf_url (str): URL of the PBF file.
             filename (str): Destination filename.
         """
+        
+        com_filename = os.path.join(self.output_path, f"{filename}.pbf")
+
         try:
-            wget.download(pbf_url, out=filename)
+            wget.download(pbf_url, out=com_filename)
             print(f"\nDownload completed: {filename}")
         except Exception as e:
             print(f"\nFailed to download {filename} from {pbf_url}. Error: {e}")
 
-    def download_all(self) -> None:
+    def download_all(self, replace=False) -> None:
         """
         Downloads all PBF files specified in the pbf_dict.
         """
         for filename, url in self.pbf_dict.items():
-            file_path = os.path.join(self.output_path, f"{filename}.pbf")
-            if os.path.exists(file_path):
-                print(f"File {file_path} already exists. Skipping download.")
+
+            complete_file_path = os.path.join(self.output_path, f"{filename}.pbf")
+            
+            if os.path.exists(complete_file_path) and replace==False:
+                print(f"File {complete_file_path} already exists. Skipping download.")
                 continue
 
+            elif os.path.exists(complete_file_path) and replace==True:
+                os.remove(complete_file_path)
+
             print(f"Starting download for {filename}...")
-            self.download_pbf(url, file_path)
+            
+            self.download_pbf(url, self.output_path, f"{filename}.pbf")
