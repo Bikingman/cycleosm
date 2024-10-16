@@ -1,3 +1,5 @@
 src/output/
 src/python/__pycache__/
 vars.txt
+bike_infrastrucure_data_usa.*
+dist/
