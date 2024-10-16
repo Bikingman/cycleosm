@@ -252,7 +252,7 @@ class BikeOSM(osmium.SimpleHandler, Utils):
                 if tags['highway'] == 'cycleway':
                     return 'Shared Use Path'
         except:
-            return 'Unkown'
+            return 'Unknown'
 
     def _bicycle_route(self, tags):
         """
